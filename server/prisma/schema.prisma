@@ -1,13 +1,135 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------------------------------
+// Core Network Topology
+// ----------------------------------------------------------------------------
+
+model Feeder {
+  id               String            @id
+  transformers     Transformer[]
+  scheduledOutages ScheduledOutage[]
+}
+
+model Transformer {
+  id               String            @id
+  feederId         String
+  feeder           Feeder            @relation(fields: [feederId], references: [id])
+  lat              Float
+  lon              Float
+  capacityKva      Int
+  householdsServed Int
+  poles            Pole[]
+  scheduledOutages ScheduledOutage[]
+}
+
+model Pole {
+  id             String          @id
+  feederId       String
+  dtId           String
+  transformer    Transformer     @relation(fields: [dtId], references: [id])
+  lat            Float
+  lon            Float
+  
+  // Topology - Missing for 60% of DTs. Can be populated by our estimator.
+  seqOnLine      Int?
+  parentPoleId   String?
+  parentPole     Pole?           @relation("PoleHierarchy", fields: [parentPoleId], references: [id])
+  childPoles     Pole[]          @relation("PoleHierarchy")
+  
+  poleType       String
+  ward           String
+  pincode        String?
+  
+  // Device mapping - ~9% of poles have no device
+  deviceId       String?         @unique
+  
+  telemetry      Telemetry[]
+  incidentPoles  IncidentPole[]
+}
+
+// ----------------------------------------------------------------------------
+// Telemetry & State
+// ----------------------------------------------------------------------------
+
+model Telemetry {
+  id         String   @id @default(uuid())
+  deviceId   String
+  poleId     String
+  pole       Pole     @relation(fields: [poleId], references: [id])
+  event      String   // heartbeat, power_lost, power_restored, boot
+  energized  Boolean
+  ts         DateTime
+  seq        Int      // Monotonic per device, crucial for deduplication
+  batteryMv  Int?
+  rssi       Int?
+  fw         String?
+  createdAt  DateTime @default(now())
+
+  // We index deviceId and seq together to quickly ignore duplicates and out-of-order packets
+  @@index([deviceId, seq])
+}
+
+// ----------------------------------------------------------------------------
+// Workflow & Ticketing
+// ----------------------------------------------------------------------------
+
+model Incident {
+  id               String          @id @default(uuid())
+  status           String          // detected, acknowledged, crew_assigned, resolved, verified, closed
+  inferredSpan     String?         // E.g., "Between P-1 and P-2"
+  confidence       Float           // 0.0 to 1.0 (lower if using estimated topology)
+  downstreamImpact Int             // Number of dark poles
+  overlapOutage    Boolean         @default(false)
+  createdAt        DateTime        @default(now())
+  resolvedAt       DateTime?
+  closedAt         DateTime?
+  incidentPoles    IncidentPole[]
+  ticket           Ticket?
+}
+
+// Junction table mapping one incident to many affected poles
+model IncidentPole {
+  incidentId String
+  poleId     String
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  pole       Pole     @relation(fields: [poleId], references: [id], onDelete: Cascade)
+
+  @@id([incidentId, poleId])
+}
+
+model Ticket {
+  id         String   @id @default(uuid())
+  incidentId String   @unique
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  
+  // This is where the AI-generated "Incident Summary" will be stored
+  summary    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// ----------------------------------------------------------------------------
+// External Feed Mock
+// ----------------------------------------------------------------------------
+
+model ScheduledOutage {
+  id            String       @id
+  scope         String       // 'feeder' or 'dt'
+  feederId      String?
+  transformerId String?
+  feeder        Feeder?      @relation(fields: [feederId], references: [id])
+  transformer   Transformer? @relation(fields: [transformerId], references: [id])
+  start         DateTime
+  end           DateTime
+  reason        String
 }
