@@ -20,6 +20,8 @@ async function startServer() {
 
   // 2. Start the background Telemetry Worker
   const telemetryProcessor = new TelemetryProcessingService(prisma);
+  telemetryProcessor.startHeartbeatMonitor(); // Start the cron for missing heartbeats & fw 1.2 bug
+  
   const telemetryWorker = new TelemetryWorker(telemetryProcessor, 100, 50);
   telemetryWorker.start();
   
