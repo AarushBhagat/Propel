@@ -262,6 +262,13 @@ export default function Dashboard() {
               <div className="text-lg font-bold text-red-600">{selectedIncident.faultType || 'Span Fault'}</div>
             </div>
 
+            {selectedIncident.inferredSpan && (
+              <div className="mb-6">
+                <div className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1">Inferred Fault Span</div>
+                <div className="text-sm font-medium text-slate-800">{selectedIncident.inferredSpan}</div>
+              </div>
+            )}
+
             <div className="mb-6">
               <div className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-2">Topology</div>
               <span className={`text-xs px-3 py-1 rounded-full font-bold border ${
@@ -294,6 +301,16 @@ export default function Dashboard() {
               <div className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1">Affected Infrastructure</div>
               <div className="text-sm font-medium text-slate-800">
                 {selectedIncident.incidentPoles?.length || 0} Downstream Poles
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <div className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1">Timestamps</div>
+              <div className="text-xs text-slate-600 space-y-1">
+                <div><span className="font-semibold text-slate-500">Created:</span> {new Date(selectedIncident.createdAt).toLocaleString()}</div>
+                {selectedIncident.ticket?.updatedAt && (
+                  <div><span className="font-semibold text-slate-500">Last Updated:</span> {new Date(selectedIncident.ticket.updatedAt).toLocaleString()}</div>
+                )}
               </div>
             </div>
             
