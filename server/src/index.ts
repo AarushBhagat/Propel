@@ -22,12 +22,18 @@ export const graphService = new GraphService(prisma);
 export const telemetryIngestionService = new TelemetryIngestionService();
 export const simulatorService = new SimulatorService(prisma, graphService, telemetryIngestionService);
 
+import { AiSummaryService } from './services/AiSummaryService';
+
 // Initialize Workflow Services
 const scheduledOutageService = new ScheduledOutageService(prisma);
 const localizationService = new LocalizationService(graphService);
 const confidenceService = new ConfidenceService();
 const incidentService = new IncidentService(prisma, graphService);
 export const ticketWorkflowService = new TicketWorkflowService(prisma);
+
+const aiSummaryService = new AiSummaryService(prisma);
+ticketWorkflowService.setSummaryService(aiSummaryService);
+
 const workflowCoordinator = new WorkflowCoordinator(
   graphService,
   localizationService,

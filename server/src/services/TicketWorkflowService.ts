@@ -1,5 +1,6 @@
 import { PrismaClient, Incident, Ticket } from '@prisma/client';
 import { CachedPoleState } from './TelemetryProcessingService';
+import { AiSummaryService } from './AiSummaryService';
 
 export interface WorkflowResult {
   incident: Incident;
@@ -26,9 +27,14 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
  */
 export class TicketWorkflowService {
   private prisma: PrismaClient;
+  private aiSummaryService?: AiSummaryService;
 
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
+  }
+
+  public setSummaryService(aiSummaryService: AiSummaryService) {
+    this.aiSummaryService = aiSummaryService;
   }
 
   /**
@@ -36,12 +42,21 @@ export class TicketWorkflowService {
    * Called by the WorkflowCoordinator after an Incident is created.
    */
   public async createTicket(incidentId: string): Promise<Ticket> {
-    return await this.prisma.ticket.create({
+    const ticket = await this.prisma.ticket.create({
       data: {
         incidentId,
-        // AI Summary will be populated later
+        // AI Summary will be populated asynchronously
       }
     });
+
+    if (this.aiSummaryService) {
+      // Trigger asynchronously so ticket creation is never blocked
+      this.aiSummaryService.generateSummary(incidentId).catch(err => {
+        console.error(`[TicketWorkflowService] Background summary generation failed:`, err);
+      });
+    }
+
+    return ticket;
   }
 
   /**
