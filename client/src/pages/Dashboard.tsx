@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
+import React, { useEffect, useState, useMemo } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, CircleMarker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -20,13 +20,48 @@ function ChangeView({ center, zoom }: { center: [number, number], zoom: number }
   return null;
 }
 
+// Deterministic coordinate generator based on string hash
+function stringToFloat(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return (hash & 0x7fffffff) / 0x7fffffff; // 0.0 to 1.0
+}
+
+function generateCoords(id: string, center: [number, number], radius: number): [number, number] {
+  const angle = stringToFloat(id + "angle") * Math.PI * 2;
+  const dist = stringToFloat(id + "dist") * radius;
+  return [
+    center[0] + dist * Math.cos(angle),
+    center[1] + dist * Math.sin(angle)
+  ];
+}
+
 export default function Dashboard() {
   const [incidents, setIncidents] = useState<any[]>([]);
   const [selectedIncident, setSelectedIncident] = useState<any>(null);
+  
+  const [feeders, setFeeders] = useState<any[]>([]);
+  const [transformers, setTransformers] = useState<any[]>([]);
+
+  const defaultCenter: [number, number] = [37.7749, -122.4194]; // SF
+  const [mapCenter, setMapCenter] = useState<[number, number]>(defaultCenter);
+  const [zoom, setZoom] = useState(13);
 
   useEffect(() => {
     fetchIncidents();
     const interval = setInterval(fetchIncidents, 10000);
+
+    // Fetch mock topology
+    fetch('http://localhost:3000/api/simulator/options?type=feeders')
+      .then(res => res.json())
+      .then(data => { if (data.success) setFeeders(data.data); });
+
+    fetch('http://localhost:3000/api/simulator/options?type=transformers')
+      .then(res => res.json())
+      .then(data => { if (data.success) setTransformers(data.data); });
+
     return () => clearInterval(interval);
   }, []);
 
@@ -36,12 +71,10 @@ export default function Dashboard() {
       .then(data => {
         if (data.success) {
           setIncidents(data.data.incidents);
-          // If a selected incident is active, refresh its data
           setSelectedIncident((prev: any) => {
             if (!prev) return null;
             const updated = data.data.incidents.find((i: any) => i.id === prev.id);
-            if (!updated) return prev; // Keep old data if it just got closed?
-            return updated;
+            return updated || prev;
           });
         }
       })
@@ -49,22 +82,99 @@ export default function Dashboard() {
   };
 
   const handleSelectIncident = (incident: any) => {
-    // Fetch full incident details (with poles) to highlight on map
     fetch(`http://localhost:3000/api/incidents/${incident.id}`)
       .then(r => r.json())
       .then(data => {
         if (data.success) {
           setSelectedIncident(data.data);
+          // Center map on the first affected pole if available
+          if (data.data.incidentPoles && data.data.incidentPoles.length > 0) {
+            const poleId = data.data.incidentPoles[0].pole.id;
+            const dtId = data.data.incidentPoles[0].pole.dtId;
+            const dtCoords = generateCoords(dtId, defaultCenter, 0.05);
+            const poleCoords = generateCoords(poleId, dtCoords, 0.01);
+            setMapCenter(poleCoords);
+            setZoom(16);
+          }
         }
       });
   };
 
-  // Determine map center
-  let mapCenter: [number, number] = [37.7749, -122.4194]; // Default (SF)
-  let zoom = 13;
+  // Generate topological coordinates for rendering
+  const topologyRender = useMemo(() => {
+    // 1. Render Feeders
+    const feederMarkers = feeders.map(f => {
+      const coords = generateCoords(f.id, defaultCenter, 0.1);
+      return (
+        <CircleMarker key={f.id} center={coords} radius={8} color="blue" fillColor="blue" fillOpacity={0.8}>
+          <Popup>Feeder: {f.name}</Popup>
+        </CircleMarker>
+      );
+    });
 
-  // Since we don't have lat/long in our mock DB for poles, we'll just mock the map view.
-  // In a real app, we'd calculate the bounding box of the selected incident's poles.
+    // 2. Render Transformers (DTs)
+    const dtMarkers = transformers.map(t => {
+      // Find parent feeder coords (mocked as defaultCenter since we don't have feederId mapped easily in options)
+      const coords = generateCoords(t.id, defaultCenter, 0.05);
+      return (
+        <CircleMarker key={t.id} center={coords} radius={5} color="green" fillColor="green" fillOpacity={0.6}>
+          <Popup>Transformer: {t.id.slice(0,8)}</Popup>
+        </CircleMarker>
+      );
+    });
+
+    return (
+      <>
+        {feederMarkers}
+        {dtMarkers}
+      </>
+    );
+  }, [feeders, transformers]);
+
+  // Generate Active Incident Visualizations
+  const incidentRender = useMemo(() => {
+    if (!selectedIncident || !selectedIncident.incidentPoles) return null;
+
+    const isEstimated = selectedIncident.isEstimatedTopology;
+    const color = 'red'; // Fault is red
+
+    const poleMarkers = selectedIncident.incidentPoles.map((ip: any) => {
+      const pole = ip.pole;
+      const dtCoords = generateCoords(pole.dtId, defaultCenter, 0.05);
+      const poleCoords = generateCoords(pole.id, dtCoords, 0.01);
+
+      return (
+        <CircleMarker key={pole.id} center={poleCoords} radius={4} color={color} fillColor={color} fillOpacity={1}>
+          <Popup>
+            <strong>Pole {pole.deviceId}</strong><br />
+            Status: Dark
+          </Popup>
+        </CircleMarker>
+      );
+    });
+
+    // Draw a bounding/connecting line to visualize the fault span
+    const polylineCoords = selectedIncident.incidentPoles.map((ip: any) => {
+      const pole = ip.pole;
+      const dtCoords = generateCoords(pole.dtId, defaultCenter, 0.05);
+      return generateCoords(pole.id, dtCoords, 0.01);
+    });
+
+    return (
+      <>
+        {polylineCoords.length > 1 && (
+          <Polyline 
+            positions={polylineCoords} 
+            color={color} 
+            weight={4} 
+            dashArray={isEstimated ? '5, 10' : ''} 
+            opacity={0.6}
+          />
+        )}
+        {poleMarkers}
+      </>
+    );
+  }, [selectedIncident]);
 
   return (
     <div className="flex h-full w-full bg-slate-50">
@@ -98,7 +208,7 @@ export default function Dashboard() {
                     {incident.confidence}%
                   </span>
                 </div>
-                <div className="text-sm font-semibold text-slate-900 mb-1">{incident.faultType}</div>
+                <div className="text-sm font-semibold text-slate-900 mb-1">{incident.faultType || 'Span Fault'}</div>
                 <div className="flex justify-between items-center text-xs text-slate-500">
                   <span>{incident.ticket?.status || 'No Ticket'}</span>
                 </div>
@@ -116,15 +226,8 @@ export default function Dashboard() {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
             url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
           />
-          {/* Mock Incident Marker */}
-          {selectedIncident && (
-            <Marker position={mapCenter}>
-              <Popup>
-                <strong>Incident {selectedIncident.id.slice(0,8)}</strong><br />
-                {selectedIncident.faultType}
-              </Popup>
-            </Marker>
-          )}
+          {topologyRender}
+          {incidentRender}
         </MapContainer>
         
         {/* Fallback overlay if no incident selected */}
@@ -156,7 +259,7 @@ export default function Dashboard() {
 
             <div className="mb-6">
               <div className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1">Fault Type</div>
-              <div className="text-lg font-bold text-red-600">{selectedIncident.faultType}</div>
+              <div className="text-lg font-bold text-red-600">{selectedIncident.faultType || 'Span Fault'}</div>
             </div>
 
             <div className="mb-6">
@@ -175,14 +278,16 @@ export default function Dashboard() {
               <div className="flex items-center space-x-3">
                 <div className="text-3xl font-extrabold text-slate-800">{selectedIncident.confidence}%</div>
               </div>
-              <div className="mt-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
-                <div className="text-xs font-semibold text-slate-700 mb-2">Factors:</div>
-                <ul className="text-xs text-slate-600 space-y-1 font-mono">
-                  {(selectedIncident.confidenceFactors as string[])?.map((factor, idx) => (
-                    <li key={idx}>• {factor}</li>
-                  ))}
-                </ul>
-              </div>
+              {selectedIncident.confidenceFactors && (
+                <div className="mt-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                  <div className="text-xs font-semibold text-slate-700 mb-2">Factors:</div>
+                  <ul className="text-xs text-slate-600 space-y-1 font-mono">
+                    {(selectedIncident.confidenceFactors as string[])?.map((factor, idx) => (
+                      <li key={idx}>• {factor}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
             <div className="mb-6">
