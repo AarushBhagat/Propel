@@ -4,6 +4,8 @@ import { GraphService } from './services/GraphService';
 import { PrismaClient } from '@prisma/client';
 import { TelemetryProcessingService } from './services/TelemetryProcessingService';
 import { TelemetryWorker } from './workers/TelemetryWorker';
+import { TelemetryIngestionService } from './services/TelemetryIngestionService';
+import { SimulatorService } from './services/SimulatorService';
 
 // Load environment variables
 dotenv.config();
@@ -11,6 +13,8 @@ dotenv.config();
 const PORT = process.env.PORT || 3000;
 export const prisma = new PrismaClient();
 export const graphService = new GraphService(prisma);
+export const telemetryIngestionService = new TelemetryIngestionService();
+export const simulatorService = new SimulatorService(prisma, graphService, telemetryIngestionService);
 
 async function startServer() {
   console.log('[Server] Initializing...');
