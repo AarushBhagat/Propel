@@ -6,6 +6,11 @@ import { TelemetryProcessingService } from './services/TelemetryProcessingServic
 import { TelemetryWorker } from './workers/TelemetryWorker';
 import { TelemetryIngestionService } from './services/TelemetryIngestionService';
 import { SimulatorService } from './services/SimulatorService';
+import { ScheduledOutageService } from './services/ScheduledOutageService';
+import { LocalizationService } from './services/LocalizationService';
+import { ConfidenceService } from './services/ConfidenceService';
+import { IncidentService } from './services/IncidentService';
+import { WorkflowCoordinator } from './services/WorkflowCoordinator';
 
 // Load environment variables
 dotenv.config();
@@ -16,6 +21,19 @@ export const graphService = new GraphService(prisma);
 export const telemetryIngestionService = new TelemetryIngestionService();
 export const simulatorService = new SimulatorService(prisma, graphService, telemetryIngestionService);
 
+// Initialize Workflow Services
+const scheduledOutageService = new ScheduledOutageService(prisma);
+const localizationService = new LocalizationService(graphService);
+const confidenceService = new ConfidenceService();
+const incidentService = new IncidentService(prisma, graphService);
+const workflowCoordinator = new WorkflowCoordinator(
+  graphService,
+  localizationService,
+  confidenceService,
+  incidentService,
+  scheduledOutageService
+);
+
 async function startServer() {
   console.log('[Server] Initializing...');
   
@@ -24,6 +42,12 @@ async function startServer() {
 
   // 2. Start the background Telemetry Worker
   const telemetryProcessor = new TelemetryProcessingService(prisma);
+  
+  // Wire the Workflow Coordinator to the Processing Service
+  telemetryProcessor.setWorkflowTrigger((poleId, stateCache) => {
+    workflowCoordinator.handleFaultTrigger(poleId, stateCache);
+  });
+
   telemetryProcessor.startHeartbeatMonitor(); // Start the cron for missing heartbeats & fw 1.2 bug
   
   const telemetryWorker = new TelemetryWorker(telemetryProcessor, 100, 50);
