@@ -119,7 +119,7 @@ export class TelemetryProcessingService {
     if (state.status === 'Dark') {
       if (!existingTimer) {
         const timer = setTimeout(() => {
-           this.triggerLocalization();
+           this.triggerLocalization(state.poleId);
            this.debounceTimers.delete(state.deviceId);
         }, this.DEBOUNCE_WINDOW_MS);
         this.debounceTimers.set(state.deviceId, timer);
@@ -153,28 +153,34 @@ export class TelemetryProcessingService {
           if (state.firmwareVersion === '1.2' && state.status !== 'Unknown') {
             // Firmware 1.2 Bug Handling: Do NOT mark as Dark. Mark as Unknown.
             state.status = 'Unknown';
-            stateChanged = true;
+            this.triggerLocalization(state.poleId);
           } else if (state.firmwareVersion !== '1.2' && state.status !== 'Dark') {
             // Standard devices should be marked Dark if they stop heartbeating
             state.status = 'Dark';
-            stateChanged = true;
             this.handleStateChange(state);
           }
         }
       }
-
-      if (stateChanged) {
-        this.triggerLocalization();
-      }
     }, 60 * 1000);
   }
 
+  // Coordinator callback to trigger the incident pipeline
+  private workflowTrigger?: (poleId: string, stateCache: Map<string, CachedPoleState>) => void;
+
+  public setWorkflowTrigger(trigger: (poleId: string, stateCache: Map<string, CachedPoleState>) => void) {
+    this.workflowTrigger = trigger;
+  }
+
   /**
-   * Forwards the ENTIRE updated canonical network state to the Localization Service.
+   * Forwards the updated canonical network state to the Localization Service.
    * Localization operates on state, not individual raw packets.
    */
-  private triggerLocalization(): void {
-    // TODO: Connect to Localization Service in Phase 4
-    console.log(`[Telemetry] Forwarding updated state cache (${this.stateCache.size} devices) to Localization Service...`);
+  private triggerLocalization(poleId: string): void {
+    if (this.workflowTrigger) {
+      console.log(`[Telemetry] Forwarding updated state cache to Workflow Coordinator for pole ${poleId}...`);
+      this.workflowTrigger(poleId, this.stateCache);
+    } else {
+      console.warn('[Telemetry] Workflow trigger not configured.');
+    }
   }
 }
