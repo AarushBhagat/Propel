@@ -27,7 +27,7 @@ const scheduledOutageService = new ScheduledOutageService(prisma);
 const localizationService = new LocalizationService(graphService);
 const confidenceService = new ConfidenceService();
 const incidentService = new IncidentService(prisma, graphService);
-const ticketWorkflowService = new TicketWorkflowService(prisma);
+export const ticketWorkflowService = new TicketWorkflowService(prisma);
 const workflowCoordinator = new WorkflowCoordinator(
   graphService,
   localizationService,
