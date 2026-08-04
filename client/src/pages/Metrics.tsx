@@ -37,10 +37,59 @@ export default function Metrics() {
           <MetricCard title="Queue Size" value={metrics.queueSize} />
         </div>
         
+        <div className="mt-10 bg-white border border-slate-200 rounded-xl shadow-sm p-6">
+          <h2 className="text-lg font-bold text-slate-800 mb-4 border-b border-slate-100 pb-3">Recent Activity</h2>
+          <div className="space-y-4">
+            <ActivityRow 
+              title="Fault Localized" 
+              data={metrics.recentActivity?.faultLocalized} 
+              icon="📍" 
+            />
+            <ActivityRow 
+              title="Ticket Created" 
+              data={metrics.recentActivity?.ticketCreated} 
+              icon="🎫" 
+            />
+            <ActivityRow 
+              title="Ticket Verified" 
+              data={metrics.recentActivity?.ticketVerified} 
+              icon="✅" 
+            />
+            <ActivityRow 
+              title="Ticket Closed" 
+              data={metrics.recentActivity?.ticketClosed} 
+              icon="🔒" 
+            />
+          </div>
+        </div>
+        
         <div className="mt-8 text-xs text-slate-400">
           Last updated: {new Date(metrics.generatedAt).toLocaleString()}
         </div>
       </div>
+    </div>
+  );
+}
+
+function ActivityRow({ title, data, icon }: { title: string, data: any, icon: string }) {
+  if (!data) return (
+    <div className="flex items-center justify-between text-sm py-2">
+      <div className="flex items-center space-x-3 text-slate-400">
+        <span className="text-xl grayscale opacity-50">{icon}</span>
+        <span className="font-medium">{title}</span>
+      </div>
+      <span className="text-slate-400 italic">No recent activity</span>
+    </div>
+  );
+
+  return (
+    <div className="flex items-center justify-between text-sm py-2 border-b border-slate-50 last:border-0">
+      <div className="flex items-center space-x-3 text-slate-700">
+        <span className="text-xl">{icon}</span>
+        <span className="font-medium">{title}</span>
+        <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-xs font-mono">#{data.id.slice(0,8)}</span>
+      </div>
+      <span className="text-slate-500 font-medium">{new Date(data.timestamp).toLocaleString()}</span>
     </div>
   );
 }

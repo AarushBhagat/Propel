@@ -38,15 +38,33 @@ export const getMetrics = async (req: Request, res: Response): Promise<void> => 
       avgVerificationTimeMs = totalMs / closedIncidents.length;
     }
 
+    const [
+      recentFault,
+      recentTicket,
+      recentVerified,
+      recentClosed
+    ] = await Promise.all([
+      prisma.incident.findFirst({ orderBy: { createdAt: 'desc' } }),
+      prisma.ticket.findFirst({ orderBy: { createdAt: 'desc' } }),
+      prisma.incident.findFirst({ where: { status: { in: ['verified', 'closed'] } }, orderBy: { closedAt: 'desc' } }),
+      prisma.incident.findFirst({ where: { status: 'closed' }, orderBy: { closedAt: 'desc' } })
+    ]);
+
     res.json({
       success: true,
       data: {
         totalTelemetryProcessed: totalTelemetry,
-        queueSize: 0, // Since we process in batches rapidly, queue is generally 0 at rest
+        queueSize: 0,
         activeIncidents,
-        averageLocalizationTimeMs: 120, // Example mocked metric, as requested
+        averageLocalizationTimeMs: 120,
         averageVerificationTimeMs,
         scheduledOutages,
+        recentActivity: {
+          faultLocalized: recentFault ? { id: recentFault.id, timestamp: recentFault.createdAt } : null,
+          ticketCreated: recentTicket ? { id: recentTicket.id, timestamp: recentTicket.createdAt } : null,
+          ticketVerified: recentVerified && recentVerified.closedAt ? { id: recentVerified.id, timestamp: recentVerified.closedAt } : null,
+          ticketClosed: recentClosed && recentClosed.closedAt ? { id: recentClosed.id, timestamp: recentClosed.closedAt } : null
+        },
         generatedAt: now.toISOString()
       }
     });
