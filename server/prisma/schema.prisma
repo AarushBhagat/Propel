@@ -112,7 +112,7 @@ model Ticket {
   incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
   
   // This is where the AI-generated "Incident Summary" will be stored
-  summary    String
+  summary    String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }

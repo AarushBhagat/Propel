@@ -125,11 +125,14 @@ export class TelemetryProcessingService {
         this.debounceTimers.set(state.deviceId, timer);
       }
     } else if (state.status === 'Energized') {
-      // Transient Fault! Power was restored before the debounce window expired.
       if (existingTimer) {
+        // Transient Fault! Power was restored before the debounce window expired.
         clearTimeout(existingTimer);
         this.debounceTimers.delete(state.deviceId);
         console.log(`[Telemetry] Transient fault cleared for ${state.deviceId} (Power Restored < 60s)`);
+      } else {
+        // Genuine restoration (debounce already passed and incident potentially created)
+        this.triggerVerification(state.poleId);
       }
     }
   }
@@ -166,9 +169,15 @@ export class TelemetryProcessingService {
 
   // Coordinator callback to trigger the incident pipeline
   private workflowTrigger?: (poleId: string, stateCache: Map<string, CachedPoleState>) => void;
+  // Coordinator callback to trigger restoration verification
+  private restorationTrigger?: (poleId: string, stateCache: Map<string, CachedPoleState>) => void;
 
   public setWorkflowTrigger(trigger: (poleId: string, stateCache: Map<string, CachedPoleState>) => void) {
     this.workflowTrigger = trigger;
+  }
+
+  public setRestorationTrigger(trigger: (poleId: string, stateCache: Map<string, CachedPoleState>) => void) {
+    this.restorationTrigger = trigger;
   }
 
   /**
@@ -181,6 +190,13 @@ export class TelemetryProcessingService {
       this.workflowTrigger(poleId, this.stateCache);
     } else {
       console.warn('[Telemetry] Workflow trigger not configured.');
+    }
+  }
+
+  private triggerVerification(poleId: string): void {
+    if (this.restorationTrigger) {
+      console.log(`[Telemetry] Triggering restoration verification for pole ${poleId}...`);
+      this.restorationTrigger(poleId, this.stateCache);
     }
   }
 }

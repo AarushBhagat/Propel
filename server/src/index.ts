@@ -10,6 +10,7 @@ import { ScheduledOutageService } from './services/ScheduledOutageService';
 import { LocalizationService } from './services/LocalizationService';
 import { ConfidenceService } from './services/ConfidenceService';
 import { IncidentService } from './services/IncidentService';
+import { TicketWorkflowService } from './services/TicketWorkflowService';
 import { WorkflowCoordinator } from './services/WorkflowCoordinator';
 
 // Load environment variables
@@ -26,12 +27,14 @@ const scheduledOutageService = new ScheduledOutageService(prisma);
 const localizationService = new LocalizationService(graphService);
 const confidenceService = new ConfidenceService();
 const incidentService = new IncidentService(prisma, graphService);
+const ticketWorkflowService = new TicketWorkflowService(prisma);
 const workflowCoordinator = new WorkflowCoordinator(
   graphService,
   localizationService,
   confidenceService,
   incidentService,
-  scheduledOutageService
+  scheduledOutageService,
+  ticketWorkflowService
 );
 
 async function startServer() {
@@ -46,6 +49,9 @@ async function startServer() {
   // Wire the Workflow Coordinator to the Processing Service
   telemetryProcessor.setWorkflowTrigger((poleId, stateCache) => {
     workflowCoordinator.handleFaultTrigger(poleId, stateCache);
+  });
+  telemetryProcessor.setRestorationTrigger((poleId, stateCache) => {
+    workflowCoordinator.handleRestorationTrigger(poleId, stateCache);
   });
 
   telemetryProcessor.startHeartbeatMonitor(); // Start the cron for missing heartbeats & fw 1.2 bug
