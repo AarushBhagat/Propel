@@ -2,7 +2,7 @@ import { GraphService } from './GraphService';
 import { PoleStateStatus } from './TelemetryProcessingService';
 
 export interface LocalizationResult {
-  upstreamPoleId: string;
+  upstreamPoleId: string | null;
   downstreamPoleId: string;
   affectedCount: number;
   isEstimatedEdge: boolean;

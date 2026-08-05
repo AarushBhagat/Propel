@@ -74,7 +74,7 @@ export class ConfidenceService {
   }
 
   private applyFirmwarePenalty(context: ConfidenceResult, result: LocalizationResult, poleStates: Map<string, CachedPoleState>): void {
-    const evidencePoles = result.traversedPath || [result.upstreamPoleId, result.downstreamPoleId];
+    const evidencePoles = result.traversedPath || ([result.upstreamPoleId, result.downstreamPoleId].filter(id => id !== null) as string[]);
     
     const hasUnstableFirmware = evidencePoles.some(poleId => {
       const state = poleStates.get(poleId);

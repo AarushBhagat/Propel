@@ -24,9 +24,11 @@ export class TopologyService {
 
     // 2. Identify the Root
     // The root is physically closest to the transformer's own GPS coordinates.
-    let root = poles[0];
+    let root: Pole | undefined;
     let minDtDist = Infinity;
     
+    if (poles.length === 0) return;
+
     for (const pole of poles) {
       const dist = this.calculateEuclideanDistance(transformer.lat, transformer.lon, pole.lat, pole.lon);
       if (dist < minDtDist) {
@@ -34,6 +36,8 @@ export class TopologyService {
         root = pole;
       }
     }
+    
+    if (!root) return;
 
     const connected: Set<string> = new Set([root.id]);
     const unconnected: Set<string> = new Set(poles.map(p => p.id));

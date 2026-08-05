@@ -14,7 +14,7 @@ export const getActiveOutages = async (req: Request, res: Response): Promise<voi
       },
       include: {
         feeder: {
-          select: { name: true }
+          select: { id: true }
         },
         transformer: {
           select: { id: true }

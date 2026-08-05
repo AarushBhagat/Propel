@@ -180,12 +180,12 @@ export class TicketWorkflowService {
       // Success: Everyone has power
       // We perform the FSM transitions: resolved -> verified -> closed
       
-      let currentIncident = incident;
+      let startStatus = incident.status;
       
-      if (currentIncident.status !== 'resolved') {
+      if (startStatus !== 'resolved') {
          // Force transition to resolved first if it was in crew_assigned
-         const res = await this.transitionState(incidentId, 'resolved');
-         currentIncident = res.incident;
+         await this.transitionState(incidentId, 'resolved');
+         startStatus = 'resolved';
       }
 
       const verifiedRes = await this.transitionState(incidentId, 'verified');

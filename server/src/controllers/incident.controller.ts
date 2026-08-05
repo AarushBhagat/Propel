@@ -39,7 +39,7 @@ export const getIncidents = async (req: Request, res: Response): Promise<void> =
 
 export const getIncidentById = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const incident = await prisma.incident.findUnique({
       where: { id },

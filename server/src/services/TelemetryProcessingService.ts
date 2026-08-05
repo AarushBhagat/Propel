@@ -102,9 +102,9 @@ export class TelemetryProcessingService {
           energized: e.energized,
           ts: new Date(e.ts),
           seq: e.seq,
-          batteryMv: e.battery_mv,
-          rssi: e.rssi,
-          fw: e.fw
+          batteryMv: e.battery_mv ?? null,
+          rssi: e.rssi ?? null,
+          fw: e.fw ?? null
         }))
       });
     }

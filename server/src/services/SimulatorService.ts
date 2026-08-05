@@ -1,7 +1,9 @@
 import { PrismaClient } from '@prisma/client';
 import { GraphService } from './GraphService';
 import { TelemetryIngestionService } from './TelemetryIngestionService';
-import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
+
+const uuidv4 = () => crypto.randomUUID();
 
 export interface ActiveSimulation {
   id: string;
@@ -95,7 +97,7 @@ export class SimulatorService {
     // Wait, the real Telemetry Processing Service handles missing heartbeats. So doing NOTHING physically to telemetry
     // achieves this. However, since we are a simulator that generates events on demand, we don't have a constant stream.
     // If we want it to go Unknown, we just wait. We don't need to generate telemetry.
-    this.activeSimulations.set(simId, { id: simId, type: 'Sensor Failure', targetId: poleId, affectedDevices: [pole.deviceId] });
+    this.activeSimulations.set(simId, { id: simId, type: 'Sensor Failure', targetId: poleId, affectedDevices: [pole.deviceId!] });
     
     return { simId, type: 'Sensor Failure (Missing Heartbeats)', affectedPoles: 1, messagesGenerated: 0 };
   }
