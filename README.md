@@ -20,7 +20,20 @@
 <br>
 
 **React • Node.js • Express • TypeScript • PostgreSQL • Prisma • TailwindCSS • Leaflet • Docker • OpenAI**
+---
 
+## 🎯 Key Highlights
+
+- ⚡ Real-time telemetry ingestion and sequential processing
+- 🌳 Graph-based fault localization using electrical topology
+- 📍 Automatic missing topology estimation
+- 📊 Explainable deterministic confidence scoring
+- 🎫 Finite State Machine (FSM) ticket workflow
+- 🤖 AI-enhanced incident summaries with deterministic fallback
+- 🗺️ Interactive Karnataka-based operator dashboard
+- 🐳 Fully Dockerized deployment
+
+---
 </div>
 
 ---
@@ -82,7 +95,6 @@
 - [Production Deployment](#-production-deployment)
 - [Simulator](#-simulator)
 - [AI Incident Summary](#-ai-incident-summary)
-- [Screenshots](#-screenshots)
 - [Documentation](#-documentation)
 - [Future Improvements](#-future-improvements)
 - [License](#-license)
@@ -147,101 +159,34 @@ This allows operators to focus on **repairing the fault** rather than manually a
 ```mermaid
 flowchart LR
 
-A[IoT Devices]
-
--->
-
-B[Telemetry API]
-
--->
-
-C[In-Memory Queue]
-
--->
-
-D[Telemetry Worker]
-
--->
-
-E[Telemetry Processing]
-
--->
-
-F[State Cache]
-
--->
-
-G[Localization Service]
-
--->
-
-H[Confidence Service]
-
--->
-
-I[Incident Service]
-
--->
-
-J[Ticket Workflow]
-
--->
-
-K[AI Summary]
-
--->
-
-L[React Dashboard]
+A[IoT Devices] --> B[Telemetry API]
+B --> C[Telemetry Queue]
+C --> D[Telemetry Worker]
+D --> E[Telemetry Processing]
+E --> F[State Cache]
+F --> G[Localization Service]
+G --> H[Confidence Service]
+H --> I[Incident Service]
+I --> J[Ticket Workflow]
+J --> K[AI Summary]
+K --> L[React Dashboard]
 ```
-
----
 
 # ⚡ Telemetry Processing Pipeline
 
 ```mermaid
 flowchart LR
 
-Telemetry
-
--->
-
-Validate
-
--->
-
-Deduplicate
-
--->
-
-Drop Stale Events
-
--->
-
-Update State Cache
-
--->
-
-Persist
-
--->
-
-Debounce
-
--->
-
-Localization
-
--->
-
-Confidence
-
--->
-
-Incident
-
--->
-
-Ticket
+Telemetry --> Validate
+Validate --> Deduplicate
+Deduplicate --> Drop_Stale_Events
+Drop_Stale_Events --> Update_State_Cache
+Update_State_Cache --> Persist
+Persist --> Debounce
+Debounce --> Localization
+Localization --> Confidence
+Confidence --> Incident
+Incident --> Ticket
 ```
 
 ---
@@ -249,13 +194,34 @@ Ticket
 # 🌳 Electrical Network Representation
 
 The electrical distribution network is modeled as a **rooted tree**.
-
 ```mermaid
 graph TD
 
-Feeder
+Feeder --> Transformer
 
--->
+Transformer --> Pole1
+Pole1 --> Pole2
+Pole2 --> Pole3
+Pole2 --> Pole4
+Pole4 --> Pole5
+---
+
+# 📍 Fault Localization Workflow
+
+```mermaid
+flowchart LR
+
+Start --> Load_State_Cache
+Load_State_Cache --> Traverse_Graph
+Traverse_Graph --> Find_Live_Dark_Boundary
+Find_Live_Dark_Boundary --> Count_Downstream_Poles
+Count_Downstream_Poles --> Return_Localization_Result
+```
+
+The localization engine traverses the electrical graph and identifies the first transition from an energized pole to a de-energized pole. This live-to-dark boundary represents the most probable physical fault location.
+
+---
+```
 
 # 🧠 Core Algorithms
 
@@ -287,6 +253,65 @@ The project intentionally favors deterministic engineering over unnecessary comp
 | Rooted Tree Graph | Electrical distribution networks are naturally radial |
 | GPS Nearest-Neighbor | Simple, explainable topology estimation without GIS routing |
 | Separate Confidence Service | Keeps localization independent from scoring |
+---
+
+# ⚙️ Why This Architecture?
+
+The application follows a layered service-oriented architecture where every service has a single responsibility.
+
+```text
+React Dashboard
+        │
+        ▼
+ Express REST API
+        │
+        ▼
+────────────────────────────
+ Localization Service
+ Confidence Service
+ Incident Service
+ Ticket Workflow
+ AI Summary Service
+────────────────────────────
+        │
+        ▼
+ PostgreSQL + Prisma ORM
+```
+
+This architecture keeps the application modular, deterministic, and easy to test while maintaining clear separation between business logic and infrastructure.
+
+---
+
+# 🧰 Technology Stack
+
+## Frontend
+
+| Technology | Purpose |
+|------------|---------|
+| React | User Interface |
+| TypeScript | Type Safety |
+| Tailwind CSS | Styling |
+| Leaflet | Interactive GIS Map |
+| Axios | API Communication |
+
+## Backend
+
+| Technology | Purpose |
+|------------|---------|
+| Node.js | Runtime |
+| Express | REST API |
+| Prisma | ORM |
+| PostgreSQL | Database |
+
+## Infrastructure
+
+| Technology | Purpose |
+|------------|---------|
+| Docker | Containerization |
+| Render | Backend Hosting |
+| Vercel | Frontend Hosting |
+
+---
 # 🚀 Getting Started
 
 ## Prerequisites
@@ -311,7 +336,7 @@ Clone the repository
 ```bash
 git clone https://github.com/AarushBhagat/Propel.git
 
-cd PropelAI
+cd Propel
 ```
 
 Install dependencies
@@ -628,9 +653,9 @@ B.Tech Computer Science Engineering
 
 Full Stack Developer
 
-GitHub: https://github.com/AarushBhagat
+GitHub: [AarushBhagat](https://github.com/AarushBhagat)
 
-LinkedIn: https://www.linkedin.com/in/aarushbhagat03/
+LinkedIn: [Aarush Bhagat](https://www.linkedin.com/in/aarushbhagat03/)
 
 ---
 
