@@ -1,145 +1,649 @@
-# PropelAI: Intelligent Power Grid Fault Localization
+<div align="center">
 
-## Project Overview
-PropelAI is a real-time, event-driven telemetry processing engine and dashboard designed for electricity distribution control rooms. It ingests high-frequency smart meter "power lost" and "power restored" events, correlates them against a graph-based representation of the electrical distribution network, and deterministically pinpoints physical fault locations down to the specific wire span, transformer, or feeder line.
+# ⚡ Propel GridOps
 
-## Problem Statement
-In traditional electrical grids, when a fault occurs, operators rely on customer phone calls to identify the general area of an outage. Field crews then patrol the lines to manually find the exact break. Even with modern smart meters, a single span fault can trigger a flood of thousands of "power lost" messages. Sorting through this data storm to find the root cause is a massive data processing challenge. PropelAI solves this by transforming noisy telemetry streams into actionable, precisely localized incident tickets automatically.
+### Intelligent Power Distribution Fault Localization System
 
-## Features
-- **Real-Time Telemetry Ingestion**: Handles massive bursts of "power lost/restored" heartbeat signals.
-- **Topological Fault Localization**: Implements a highly efficient graph traversal algorithm that finds the exact live-to-dark boundary on the physical grid.
-- **Confidence Scoring**: Assigns deterministic confidence levels based on topology source (official vs. GPS-estimated) and sensor reliability.
-- **Missing Topology Estimation**: Automatically infers missing grid connections using spatial nearest-neighbor heuristics when official GIS data is incomplete.
-- **Deduplication & Debouncing**: Uses sliding-window debounce timers and in-memory caches to prevent race conditions and duplicate incident ticket generation.
-- **Ticket Finite State Machine (FSM)**: Enforces strict workflow states (`detected` -> `acknowledged` -> `crew_assigned` -> `resolved` -> `verified` -> `closed`) with automated telemetry verification.
-- **AI Summary Generation**: Contextualizes technical incident metrics into human-readable situation reports.
-- **Interactive Control Room Dashboard**: A professional, dark-themed React UI rendering live telemetry metrics, active incidents, and a Karnataka-localized Leaflet map.
-- **End-to-End Simulation Engine**: Inject synthetic faults (span, transformer, feeder) or scheduled outages directly into the pipeline for testing and demonstration.
+*A full-stack, real-time fault localization platform for electricity distribution networks using IoT telemetry, graph algorithms, deterministic incident analysis, and an operator-friendly dashboard.*
 
-## Architecture Overview
-The system is built entirely on Node.js using a modular architecture divided into specific domain services:
-1. **Simulator**: Injects raw telemetry into the ingestion API.
-2. **Telemetry Ingestion & Queue**: Validates and queues payloads to handle massive bursts without blocking.
-3. **Telemetry Worker & Processing**: Processes events sequentially, manages the in-memory `stateCache`, and triggers the debounce mechanism.
-4. **Debounce Logic**: Buffers state changes to ensure the full impact footprint of a fault is collected before triggering localization.
-5. **Localization Service**: Pure graph traversal logic mapping dark nodes.
-6. **Confidence & Incident Services**: Scores the localization and groups it into deduplicated database records.
-7. **Ticket Workflow & AI**: Manages operational states and generates summaries.
+<br>
 
-## Technology Stack
-- **Frontend**: React (Vite), Tailwind CSS, Leaflet, Lucide Icons, Axios.
-- **Backend**: Node.js, Express, TypeScript.
-- **Database**: PostgreSQL with Prisma ORM.
-- **Containerization**: Docker & Docker Compose.
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![Node.js](https://img.shields.io/badge/Node.js-20-339933?style=for-the-badge&logo=node.js&logoColor=white)
+![Express](https://img.shields.io/badge/Express-5-000000?style=for-the-badge&logo=express&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-success?style=for-the-badge)
 
-## Folder Structure
-```text
-PropelAI/
-├── client/                 # React Frontend (Vite)
-│   ├── src/
-│   │   ├── components/     # UI Components (Dashboard, Map, Incidents, Simulator)
-│   │   ├── config/         # App-wide configurations (e.g., map.ts)
-│   │   ├── hooks/          # Custom data-fetching hooks
-│   │   └── index.css       # Tailwind entry and custom styling
-├── server/                 # Node.js Backend
-│   ├── prisma/             # Prisma schema and migrations
-│   ├── src/
-│   │   ├── controllers/    # API Request Handlers
-│   │   ├── routes/         # Express Routing Definitions
-│   │   ├── services/       # Core Business Logic (Localization, Topology, Incidents)
-│   │   ├── workers/        # Background queue processors
-│   │   └── index.ts        # Server entry point
-└── docker-compose.yml
+<br>
+
+**React • Node.js • Express • TypeScript • PostgreSQL • Prisma • TailwindCSS • Leaflet • Docker • OpenAI**
+
+</div>
+
+---
+
+# 📸 Application Preview
+
+<img width="1620" height="1079" alt="image" src="https://github.com/user-attachments/assets/6529838c-b4ad-4604-9226-e5fae4e2d507" />
+
+
+| Dashboard |
+|------------|
+| ![Dashboard](https://github.com/user-attachments/assets/437e7546-f6d2-4716-a957-e950d69ddebd) |
+
+---
+
+# 🚀 Project Highlights
+
+| Feature | Description |
+|----------|-------------|
+| ⚡ Real-Time Telemetry | Processes thousands of telemetry events asynchronously |
+| 🌐 Graph-Based Localization | Detects the exact live-to-dark boundary within the electrical network |
+| 📍 GPS Topology Estimation | Automatically estimates missing pole relationships using nearest-neighbor analysis |
+| 📊 Confidence Scoring | Deterministic confidence engine with explainable scoring factors |
+| 🎫 Incident Management | Groups outages into a single actionable incident |
+| 🔄 Ticket Workflow | Finite State Machine with telemetry-based verification |
+| 🤖 AI Incident Summary | Deterministic summaries with optional OpenAI enhancement |
+| 🗺 Interactive Dashboard | Karnataka-localized Leaflet operator dashboard |
+| 🧪 Built-in Simulator | Inject realistic faults for testing and demonstrations |
+
+---
+
+# 📈 Simulated Network
+
+| Metric | Value |
+|--------|------:|
+| Smart Devices | **34,900** |
+| Feeders | **5** |
+| Distribution Transformers | **60** |
+| Simulated Fault Types | **6** |
+| Localization Target | **< 120 seconds** |
+| Incident Workflow | **Fully Automated** |
+
+---
+
+# 📑 Table of Contents
+
+- [Project Overview](#-project-overview)
+- [Problem Statement](#-problem-statement)
+- [Solution Overview](#-solution-overview)
+- [System Architecture](#-system-architecture)
+- [Telemetry Processing Pipeline](#-telemetry-processing-pipeline)
+- [Algorithms Used](#-algorithms-used)
+- [Technology Stack](#-technology-stack)
+- [Project Structure](#-project-structure)
+- [Installation](#-installation)
+- [Environment Variables](#-environment-variables)
+- [Running Locally](#-running-locally)
+- [Docker Deployment](#-docker-deployment)
+- [Production Deployment](#-production-deployment)
+- [Simulator](#-simulator)
+- [AI Incident Summary](#-ai-incident-summary)
+- [Screenshots](#-screenshots)
+- [Documentation](#-documentation)
+- [Future Improvements](#-future-improvements)
+- [License](#-license)
+
+---
+
+# 📖 Project Overview
+
+**Propel GridOps** is a full-stack **Power Distribution Fault Localization System** built to simulate how modern electricity distribution control rooms monitor, analyze, and respond to grid failures.
+
+Instead of relying on customer complaints, the system continuously processes telemetry generated by IoT-enabled poles and transformers to determine where power has been lost. Incoming telemetry is validated, deduplicated, processed sequentially, and analyzed using deterministic graph algorithms to identify the most probable fault location.
+
+The platform combines graph traversal, topology estimation, confidence scoring, workflow automation, and an interactive operator dashboard into a single cohesive system. Every detected outage progresses through a complete lifecycle—from telemetry ingestion and localization to incident creation, ticket management, and optional AI-assisted summarization—while remaining modular, explainable, and easy to reason about.
+
+The project emphasizes deterministic engineering principles, modular service design, and clean architecture rather than relying on opaque machine learning models, making it both interview-defensible and practical for demonstrating full-stack software engineering skills.
+
+---
+
+# ⚠ Problem Statement
+
+Modern electricity distribution networks generate enormous amounts of telemetry every day through IoT-enabled poles, smart meters, and transformers.
+
+When a wire snaps or a transformer fails, **every downstream device simultaneously reports a power outage**, resulting in a burst of thousands of telemetry events within seconds.
+
+Traditional outage management systems often rely on:
+
+- Customer phone calls
+- Manual field inspection
+- Static GIS topology
+- Human correlation of outage reports
+
+These approaches significantly increase the **Mean Time To Locate (MTTL)** and **Mean Time To Repair (MTTR)**, delaying restoration and increasing operational costs.
+
+The primary engineering challenge is **not detecting that an outage occurred**—it is determining **where the outage actually originated** while filtering duplicate, stale, and noisy telemetry.
+
+Propel GridOps addresses this problem through deterministic graph algorithms, sequential telemetry processing, confidence scoring, and workflow automation.
+
+---
+
+# 💡 Solution Overview
+
+Propel GridOps transforms raw telemetry streams into actionable operator incidents through a deterministic event-processing pipeline.
+
+Instead of treating every incoming outage notification as an independent fault, the system:
+
+- validates incoming telemetry
+- removes duplicate packets
+- ignores stale events
+- maintains the latest network state
+- localizes the physical fault
+- calculates an explainable confidence score
+- groups related outages into a single incident
+- automatically creates and manages operational tickets
+- generates a human-readable incident summary
+
+This allows operators to focus on **repairing the fault** rather than manually analyzing thousands of telemetry events.
+
+---
+
+# 🏗 System Architecture
+
+```mermaid
+flowchart LR
+
+A[IoT Devices]
+
+-->
+
+B[Telemetry API]
+
+-->
+
+C[In-Memory Queue]
+
+-->
+
+D[Telemetry Worker]
+
+-->
+
+E[Telemetry Processing]
+
+-->
+
+F[State Cache]
+
+-->
+
+G[Localization Service]
+
+-->
+
+H[Confidence Service]
+
+-->
+
+I[Incident Service]
+
+-->
+
+J[Ticket Workflow]
+
+-->
+
+K[AI Summary]
+
+-->
+
+L[React Dashboard]
 ```
 
-## Installation
-Ensure you have the following installed:
-- Node.js 20+
-- Docker & Docker Compose (optional for local DB)
-- PostgreSQL 15+ (if running natively)
+---
 
-1. Clone the repository.
-2. Navigate to the project root.
-3. Install backend dependencies: `cd server && npm install`
-4. Install frontend dependencies: `cd client && npm install`
+# ⚡ Telemetry Processing Pipeline
 
-## Environment Variables
-Create a `.env` file in the `server/` directory:
+```mermaid
+flowchart LR
+
+Telemetry
+
+-->
+
+Validate
+
+-->
+
+Deduplicate
+
+-->
+
+Drop Stale Events
+
+-->
+
+Update State Cache
+
+-->
+
+Persist
+
+-->
+
+Debounce
+
+-->
+
+Localization
+
+-->
+
+Confidence
+
+-->
+
+Incident
+
+-->
+
+Ticket
+```
+
+---
+
+# 🌳 Electrical Network Representation
+
+The electrical distribution network is modeled as a **rooted tree**.
+
+```mermaid
+graph TD
+
+Feeder
+
+-->
+
+# 🧠 Core Algorithms
+
+Unlike many monitoring dashboards that rely on simple event logging, Propel GridOps uses multiple deterministic algorithms working together to accurately identify faults while remaining explainable and easy to test.
+
+| Algorithm | Purpose | Time Complexity |
+|------------|---------|----------------:|
+| Sequential Queue Processing | Prevent race conditions during telemetry ingestion | O(n) |
+| Duplicate Detection (`device_id + seq`) | Remove retransmitted packets | O(1) |
+| GPS Nearest-Neighbor Estimation | Infer missing topology | O(n²) *(per transformer, one-time estimation)* |
+| Tree Traversal | Fault localization | O(V + E) |
+| Downstream Traversal | Count impacted poles | O(V) |
+| Incident Grouping | Merge duplicate outages | O(1) lookup |
+| Ticket FSM | Enforce workflow rules | O(1) |
+| Deterministic Confidence Scoring | Compute explainable confidence | O(1) |
+
+---
+
+# 🏛 Key Design Decisions
+
+The project intentionally favors deterministic engineering over unnecessary complexity.
+
+| Decision | Why it was chosen |
+|----------|-------------------|
+| PostgreSQL | Strong relational modeling for topology, incidents and workflows |
+| Prisma ORM | Type-safe database access with simple migrations |
+| In-Memory Queue | Satisfies assignment scope without introducing Redis/Kafka |
+| Sequential Worker | Guarantees deterministic processing and avoids race conditions |
+| Rooted Tree Graph | Electrical distribution networks are naturally radial |
+| GPS Nearest-Neighbor | Simple, explainable topology estimation without GIS routing |
+| Separate Confidence Service | Keeps localization independent from scoring |
+# 🚀 Getting Started
+
+## Prerequisites
+
+Before running the project, ensure you have the following installed:
+
+| Software | Version |
+|-----------|---------|
+| Node.js | 20+ |
+| npm | 10+ |
+| PostgreSQL | 15+ |
+| Docker | Latest |
+| Docker Compose | Latest |
+| Git | Latest |
+
+---
+
+# 📥 Installation
+
+Clone the repository
+
+```bash
+git clone https://github.com/AarushBhagat/Propel.git
+
+cd PropelAI
+```
+
+Install dependencies
+
+Backend
+
+```bash
+cd server
+npm install
+```
+
+Frontend
+
+```bash
+cd ../client
+npm install
+```
+
+---
+
+# 🔑 Environment Variables
+
+## Backend (`server/.env`)
+
+| Variable | Required | Description |
+|-----------|----------|-------------|
+| DATABASE_URL | ✅ | PostgreSQL connection string |
+| PORT | ❌ | Backend server port (default: 3000) |
+| OPENAI_API_KEY | ❌ | OpenAI API Key for AI Summary enhancement |
+
+Example
+
 ```env
-# Database configuration
-DATABASE_URL="postgresql://postgres:postgres@localhost:5433/fault_localization?schema=public"
+DATABASE_URL=postgresql://postgres:postgres@localhost:5433/fault_localization?schema=public
+
 PORT=3000
 
-# OpenAI Configuration (Optional, fallback logic exists)
-OPENAI_API_KEY="your-api-key"
+OPENAI_API_KEY=
 ```
-Create a `.env` file in the `client/` directory:
+
+---
+
+## Frontend (`client/.env`)
+
+| Variable | Required |
+|-----------|----------|
+| VITE_API_URL | ✅ |
+
+Example
+
 ```env
 VITE_API_URL=http://localhost:3000
 ```
 
-## Running Locally
-1. Start the PostgreSQL database:
-   ```bash
-   docker compose up postgres -d
-   ```
-2. Sync the Prisma schema:
-   ```bash
-   cd server
-   npx prisma db push
-   ```
-3. Start the backend server:
-   ```bash
-   cd server
-   npm run dev
-   ```
-4. Start the frontend client:
-   ```bash
-   cd client
-   npm run dev
-   ```
+---
 
-## Running with Docker
-You can run the entire application stack using Docker Compose:
+# 💻 Running Locally
+
+## 1. Start PostgreSQL
+
+Using Docker
+
 ```bash
-docker compose up --build -d
+docker compose up postgres -d
 ```
-The backend will be available at `http://localhost:3000` and the frontend at `http://localhost:5173`.
 
-## Production Deployment
-The backend has been configured for compilation via TypeScript. 
-1. Build the backend:
-   ```bash
-   cd server
-   npm run build
-   ```
-2. The production files will be output to `server/dist`.
-3. Start the production server:
-   ```bash
-   npm start
-   ```
-Deploy the `server/` folder to platforms like Render, and the `client/` folder to Vercel or Netlify. Ensure `DATABASE_URL` is set to your production PostgreSQL instance.
+---
 
-## Simulator
-The application includes a built-in Simulator to demonstrate fault localization capabilities. Use the Simulator panel in the dashboard to inject:
-- **Span Faults**: Breaks a single wire between two poles.
-- **DT Faults**: Drops an entire Distribution Transformer.
-- **Feeder Faults**: Drops a massive sub-station feeder line.
-- **Scheduled Outages**: Creates a planned maintenance window that suppresses false alarms.
-- **Sensor Failures**: Simulates missing heartbeats.
+## 2. Generate Prisma Client
 
-## AI Summary Generator
-The `AiSummaryService` utilizes the OpenAI API to translate complex incident data into clear, human-readable operational reports. If the API key is missing or quota is exhausted, a robust deterministic template generator is automatically used as a fallback, ensuring zero disruption to control room operations.
+```bash
+cd server
 
-## Screenshots
-*<img width="1620" height="1079" alt="image" src="https://github.com/user-attachments/assets/437e7546-f6d2-4716-a957-e950d69ddebd" />
-*
+npx prisma generate
+```
 
-## Future Improvements
-- **Distributed Queuing**: Replace the in-memory queue with Redis/BullMQ to allow horizontal scaling of the Telemetry Worker across multiple node instances.
-- **Predictive Maintenance**: Use historical telemetry data and AI models to flag degrading transformers before they fail.
-- **WebSockets**: Implement socket.io for true real-time dashboard updates, replacing the current React-Query polling mechanism.
+---
 
-## License
-MIT License
+## 3. Apply Database Schema
+
+```bash
+npx prisma db push
+```
+
+or
+
+```bash
+npx prisma migrate deploy
+```
+
+---
+
+## 4. Seed the Network
+
+```bash
+npm run seed
+```
+
+---
+
+## 5. Start Backend
+
+```bash
+npm run dev
+```
+
+Backend
+
+```
+http://localhost:3000
+```
+
+---
+
+## 6. Start Frontend
+
+```bash
+cd client
+
+npm run dev
+```
+
+Frontend
+
+```
+http://localhost:5173
+```
+
+---
+
+# 🐳 Docker Deployment
+
+Run the complete stack
+
+```bash
+docker compose up --build
+```
+
+This starts
+
+- PostgreSQL
+- Backend API
+- Frontend
+
+---
+
+# ☁ Production Deployment
+
+## Backend (Render)
+
+- Connect GitHub repository
+- Root Directory → `server`
+- Build Command
+
+```bash
+npm install && npx prisma generate && npm run build && npx prisma migrate deploy
+```
+
+Start Command
+
+```bash
+npm start
+```
+
+Configure
+
+```
+DATABASE_URL
+
+OPENAI_API_KEY
+```
+
+---
+
+## Frontend (Vercel)
+
+Root Directory
+
+```
+client
+```
+
+Framework
+
+```
+Vite
+```
+
+Environment Variable
+
+```env
+VITE_API_URL=https://your-render-backend.onrender.com
+```
+
+---
+
+# 📡 REST API Overview
+
+| Endpoint | Method | Description |
+|-----------|--------|-------------|
+| /api/telemetry | POST | Receive telemetry events |
+| /api/incidents | GET | Fetch active incidents |
+| /api/incidents/:id | GET | Incident details |
+| /api/tickets/:id/status | PATCH | Advance ticket workflow |
+| /api/metrics | GET | System metrics |
+| /api/scheduled-outages | GET | Active maintenance windows |
+| /api/simulator/inject | POST | Inject simulated faults |
+| /api/simulator/restore | POST | Restore simulated faults |
+
+> Detailed request and response examples are available in **docs/API.md**.
+
+---
+
+# 🧪 Built-in Simulator
+
+The simulator allows realistic testing without physical hardware.
+
+Supported scenarios
+
+- ⚡ Span Fault
+- 🔌 Transformer Failure
+- 🌐 Feeder Failure
+- 📡 Sensor Failure
+- 🛠 Scheduled Maintenance
+- 🔄 Power Restoration
+
+Every simulated event follows the **exact same ingestion pipeline** as real telemetry, ensuring realistic end-to-end validation.
+
+---
+
+# 🤖 AI Incident Summary
+
+The application uses a **deterministic rule-based summary generator** for every incident.
+
+When an OpenAI API key is available:
+
+```
+Deterministic Summary
+
+↓
+
+OpenAI
+
+↓
+
+Improved Readability
+```
+
+If the API is unavailable or the quota is exceeded, the application automatically falls back to the deterministic summary without affecting the workflow.
+
+This ensures AI enhances readability while **never influencing operational decisions**.
+
+---
+
+# 📚 Documentation
+
+Detailed project documentation is available in the `docs/` directory.
+
+| Document | Description |
+|----------|-------------|
+| ARCHITECTURE.md | System architecture |
+| API.md | REST API documentation |
+| DECISIONS.md | Design decisions and trade-offs |
+| DEPLOYMENT.md | Local and production deployment |
+| SYSTEM_DESIGN.md | HLD, LLD and scalability |
+| TEST_REPORT.md | Validation and testing |
+
+---
+
+# 🛣 Roadmap
+
+Future improvements include:
+
+- [ ] Redis / BullMQ queue
+- [ ] Kafka event streaming
+- [ ] WebSocket dashboard updates
+- [ ] GIS road-aware topology estimation
+- [ ] Predictive maintenance using ML
+- [ ] Multi-region deployment
+- [ ] Kubernetes orchestration
+- [ ] Prometheus + Grafana monitoring
+- [ ] Distributed telemetry workers
+- [ ] Role-based authentication
+
+---
+
+# ⚠ Known Limitations
+
+Current implementation intentionally keeps the architecture lightweight for the assignment.
+
+Known limitations include:
+
+- Uses an in-memory queue instead of a distributed message broker.
+- GPS-based topology estimation does not consider roads or physical obstacles.
+- Simulator generates synthetic telemetry rather than consuming real IoT hardware.
+- Dashboard currently uses polling instead of WebSockets.
+- Designed for a single-node deployment.
+
+---
+
+# 🤝 Contributing
+
+Contributions, improvements, and suggestions are always welcome.
+
+Feel free to fork the repository, open issues, or submit pull requests.
+
+---
+
+# 👨‍💻 Author
+
+**Aarush Bhagat**
+
+B.Tech Computer Science Engineering
+
+Full Stack Developer
+
+GitHub: https://github.com/AarushBhagat
+
+LinkedIn: https://www.linkedin.com/in/aarushbhagat03/
+
+---
+
+# ⭐ If you found this project interesting...
+
+Please consider giving the repository a ⭐ on GitHub!
+
+It helps others discover the project and supports future development.
+
+---
+
+# 📄 License
+
+This project is licensed under the **MIT License**.
+
+See the LICENSE file for details.
