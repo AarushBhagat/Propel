@@ -204,6 +204,7 @@ Pole1 --> Pole2
 Pole2 --> Pole3
 Pole2 --> Pole4
 Pole4 --> Pole5
+```
 ---
 
 # 📍 Fault Localization Workflow
