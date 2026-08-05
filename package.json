@@ -6,7 +6,7 @@
     "server"
   ],
   "scripts": {
-    "dev": "npm run dev --workspaces --if-present",
+    "dev": "npx concurrently \"npm run dev -w server\" \"npm run dev -w client\"",
     "install:all": "npm install"
   }
 }

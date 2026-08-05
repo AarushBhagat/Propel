@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import './App.css';
 
 type FaultType = 'Span Fault' | 'DT Fault' | 'Feeder Fault' | 'Sensor Failure' | 'Scheduled Outage' | 'Restore Power';
 
