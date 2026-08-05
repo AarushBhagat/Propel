@@ -62,12 +62,15 @@ export class TopologyService {
       }
 
       if (bestParent && bestChild) {
-        // Connect them in the GraphService. Mark as Estimated = true.
-        this.graphService.addEdge(bestParent, bestChild, true);
-        
-        // Move to connected set
         connected.add(bestChild);
         unconnected.delete(bestChild);
+        this.graphService.addEdge(bestParent, bestChild, true);
+        
+        // Update in memory so LocalizationService knows it has a parent
+        const childPole = this.graphService.getPole(bestChild);
+        if (childPole) {
+          childPole.parentPoleId = bestParent;
+        }
       } else {
         // Fallback safety breaker if something goes horribly wrong
         break;

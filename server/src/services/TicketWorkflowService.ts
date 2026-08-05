@@ -37,26 +37,48 @@ export class TicketWorkflowService {
     this.aiSummaryService = aiSummaryService;
   }
 
+  private inFlightTickets = new Map<string, Promise<Ticket>>();
+
   /**
    * Creates a new Ticket for a newly created Incident.
    * Called by the WorkflowCoordinator after an Incident is created.
    */
   public async createTicket(incidentId: string): Promise<Ticket> {
-    const ticket = await this.prisma.ticket.create({
-      data: {
-        incidentId,
-        // AI Summary will be populated asynchronously
-      }
-    });
-
-    if (this.aiSummaryService) {
-      // Trigger asynchronously so ticket creation is never blocked
-      this.aiSummaryService.generateSummary(incidentId).catch(err => {
-        console.error(`[TicketWorkflowService] Background summary generation failed:`, err);
-      });
+    if (this.inFlightTickets.has(incidentId)) {
+      return this.inFlightTickets.get(incidentId)!;
     }
 
-    return ticket;
+    const creationPromise = (async () => {
+      // 1. Idempotent Deduplication (Race condition check)
+      const existingTicket = await this.prisma.ticket.findUnique({
+        where: { incidentId }
+      });
+
+      if (existingTicket) return existingTicket;
+
+      const ticket = await this.prisma.ticket.create({
+        data: {
+          incidentId,
+          // AI Summary will be populated asynchronously
+        }
+      });
+      
+      if (this.aiSummaryService) {
+        // Trigger asynchronously so ticket creation is never blocked
+        this.aiSummaryService.generateSummary(incidentId).catch(err => {
+          console.error(`[TicketWorkflowService] Background summary generation failed:`, err);
+        });
+      }
+
+      return ticket;
+    })();
+
+    this.inFlightTickets.set(incidentId, creationPromise);
+    try {
+      return await creationPromise;
+    } finally {
+      this.inFlightTickets.delete(incidentId);
+    }
   }
 
   /**

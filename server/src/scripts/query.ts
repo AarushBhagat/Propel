@@ -1,0 +1,1 @@
+import { prisma } from '../index'; async function main() { console.log(await prisma.pole.findMany({ where: { id: { in: ['P-000001', 'P-000002', 'P-000003'] } } })); } main();

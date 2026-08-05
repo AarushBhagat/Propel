@@ -57,7 +57,7 @@ export const getMetrics = async (req: Request, res: Response): Promise<void> => 
         queueSize: 0,
         activeIncidents,
         averageLocalizationTimeMs: 120,
-        averageVerificationTimeMs,
+        averageVerificationTimeMs: avgVerificationTimeMs,
         scheduledOutages,
         recentActivity: {
           faultLocalized: recentFault ? { id: recentFault.id, timestamp: recentFault.createdAt } : null,

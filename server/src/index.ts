@@ -16,8 +16,14 @@ import { WorkflowCoordinator } from './services/WorkflowCoordinator';
 // Load environment variables
 dotenv.config();
 
+import { Pool } from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
+
 const PORT = process.env.PORT || 3000;
-export const prisma = new PrismaClient();
+const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5433/fault_localization?schema=public';
+const pool = new Pool({ connectionString });
+const adapter = new PrismaPg(pool);
+export const prisma = new PrismaClient({ adapter });
 export const graphService = new GraphService(prisma);
 export const telemetryIngestionService = new TelemetryIngestionService();
 export const simulatorService = new SimulatorService(prisma, graphService, telemetryIngestionService);
@@ -43,14 +49,32 @@ const workflowCoordinator = new WorkflowCoordinator(
   ticketWorkflowService
 );
 
+import { TopologyService } from './services/TopologyService';
+
 async function startServer() {
   console.log('[Server] Initializing...');
   
   // 1. Load the graph into memory before accepting requests
   await graphService.loadGraph();
 
+  // 1b. Estimate missing topology for DTs that lack official relationships
+  console.log('[Server] Estimating missing topology...');
+  const topologyService = new TopologyService(graphService);
+  const transformers = await prisma.transformer.findMany();
+  let estimatedCount = 0;
+  for (const dt of transformers) {
+    const poles = graphService.getTransformerPoles(dt.id);
+    // Only estimates if missing topology is detected
+    topologyService.estimateMissingTopology(dt, poles);
+    if (poles.filter(p => !p.parentPoleId).length > 1) {
+      estimatedCount++;
+    }
+  }
+  if (estimatedCount > 0) console.log(`[Server] Estimated topology for ${estimatedCount} Transformers.`);
+
   // 2. Start the background Telemetry Worker
   const telemetryProcessor = new TelemetryProcessingService(prisma);
+
   
   // Wire the Workflow Coordinator to the Processing Service
   telemetryProcessor.setWorkflowTrigger((poleId, stateCache) => {

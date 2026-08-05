@@ -6,7 +6,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import * as dotenv from 'dotenv';
 dotenv.config({ path: '../../.env' }); // Make sure env vars are loaded
 
-const connectionString = process.env.DATABASE_URL || 'postgresql://user:password@localhost:5433/fault_localization?schema=public';
+const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5433/fault_localization?schema=public';
 const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
@@ -57,9 +57,9 @@ async function main() {
   const dts = [];
   let dtCount = 1;
 
-  // Base coordinates for the city (e.g., Bangalore)
-  const cityLat = 12.9716;
-  const cityLon = 77.5946;
+  // Base coordinates for Karnataka
+  const mapCenterLat = 15.3173;
+  const mapCenterLon = 75.7139;
 
   for (const feeder of feeders) {
     // 5 DTs per feeder = 20 total
@@ -67,9 +67,9 @@ async function main() {
       dts.push({
         id: `D-${dtCount.toString().padStart(4, '0')}`,
         feederId: feeder.id,
-        // Spread transformers across a ~5km radius
-        lat: cityLat + randomFloat(-0.05, 0.05),
-        lon: cityLon + randomFloat(-0.05, 0.05),
+        // Spread transformers across a wide radius (~150-200km) to simulate a statewide network
+        lat: mapCenterLat + randomFloat(-1.5, 1.5),
+        lon: mapCenterLon + randomFloat(-1.5, 1.5),
         capacityKva: 250,
         householdsServed: randomInt(100, 400),
       });

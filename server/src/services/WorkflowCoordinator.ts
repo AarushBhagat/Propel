@@ -50,8 +50,14 @@ export class WorkflowCoordinator {
         return;
       }
 
+      // Transform Map<deviceId, CachedPoleState> to Map<poleId, PoleStateStatus>
+      const poleStatusMap = new Map<string, import('./TelemetryProcessingService').PoleStateStatus>();
+      for (const [deviceId, state] of stateCache.entries()) {
+        poleStatusMap.set(state.poleId, state.status);
+      }
+
       // 2. Localize Faults in this DT's sub-graph
-      const faults = this.localizationService.localizeFaults(pole.dtId, stateCache);
+      const faults = this.localizationService.localizeFaults(pole.dtId, poleStatusMap);
       if (faults.length === 0) return;
 
       // 3. Check Scheduled Outages for this DT/Feeder

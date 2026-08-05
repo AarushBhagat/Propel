@@ -42,6 +42,25 @@ export class LocalizationService {
     
     if (!rootPole) return results;
 
+    // Check if >50% of the entire DT is Dark to confidently identify a DT-level fault
+    // This is crucial when the root pole lacks a device (state = Unknown)
+    let darkCount = 0;
+    for (const p of rootPoles) {
+      if (poleStates.get(p.id) === 'Dark') darkCount++;
+    }
+    
+    if (darkCount > 0 && darkCount >= rootPoles.length * 0.5) {
+      results.push({
+        upstreamPoleId: null,
+        downstreamPoleId: rootPole.id,
+        affectedCount: rootPoles.length, // The entire DT is affected
+        isEstimatedEdge: false,
+        unknownPolesEncountered: 0,
+        traversedPath: [rootPole.id]
+      });
+      return results;
+    }
+
     // Tree traversal queue: stores the poleId, path taken, and accumulated unknowns
     const queue: { currentId: string; path: string[]; unknowns: number }[] = [
       { currentId: rootPole.id, path: [rootPole.id], unknowns: 0 }
@@ -55,21 +74,6 @@ export class LocalizationService {
       
       if (currentState === 'Unknown') {
         currentUnknowns++;
-      }
-
-      // Special case: If the root Transformer is Dark, the fault is at the DT itself.
-      if (currentState === 'Dark' && currentId === rootPole.id) {
-        results.push({
-          upstreamPoleId: currentId,
-          downstreamPoleId: currentId,
-          affectedCount: this.graphService.getDownstreamPoles(currentId).length + 1,
-          isEstimatedEdge: false,
-          unknownPolesEncountered: 0,
-          traversedPath: path
-        });
-        
-        // Root is dead, no power can flow downstream. Stop traversal.
-        return results;
       }
 
       const children = this.graphService.getChildren(currentId);

@@ -47,7 +47,7 @@ export class SimulatorService {
     if (!pole) throw new Error('Pole not found');
 
     const downstream = this.graphService.getDownstreamPoles(poleId);
-    const affected = [pole, ...downstream].map(p => p.deviceId);
+    const affected = [pole, ...downstream].map(p => p.deviceId).filter((id): id is string => id !== null);
 
     const payloads = this.generateTelemetry(affected, 'power_lost', false);
     this.ingestionService.ingest(payloads);
@@ -62,7 +62,7 @@ export class SimulatorService {
     const poles = this.graphService.getTransformerPoles(dtId);
     if (poles.length === 0) throw new Error('Transformer not found or has no poles');
 
-    const affected = poles.map(p => p.deviceId);
+    const affected = poles.map(p => p.deviceId).filter((id): id is string => id !== null);
     const payloads = this.generateTelemetry(affected, 'power_lost', false);
     this.ingestionService.ingest(payloads);
 
@@ -76,7 +76,7 @@ export class SimulatorService {
     const poles = await this.prisma.pole.findMany({ where: { feederId } });
     if (poles.length === 0) throw new Error('Feeder not found or has no poles');
 
-    const affected = poles.map(p => p.deviceId);
+    const affected = poles.map(p => p.deviceId).filter((id): id is string => id !== null);
     const payloads = this.generateTelemetry(affected, 'power_lost', false);
     this.ingestionService.ingest(payloads);
 
@@ -103,10 +103,10 @@ export class SimulatorService {
   public async injectScheduledOutage(targetId: string, type: 'DT' | 'Feeder') {
     let affected: string[] = [];
     if (type === 'DT') {
-      affected = this.graphService.getTransformerPoles(targetId).map(p => p.deviceId);
+      affected = this.graphService.getTransformerPoles(targetId).map(p => p.deviceId).filter((id): id is string => id !== null);
     } else {
       const poles = await this.prisma.pole.findMany({ where: { feederId: targetId } });
-      affected = poles.map(p => p.deviceId);
+      affected = poles.map(p => p.deviceId).filter((id): id is string => id !== null);
     }
 
     if (affected.length === 0) throw new Error('Target not found or has no poles');
@@ -117,10 +117,12 @@ export class SimulatorService {
     
     await this.prisma.scheduledOutage.create({
       data: {
+        id: uuidv4(),
+        scope: type === 'Feeder' ? 'feeder' : 'dt',
         feederId: type === 'Feeder' ? targetId : null,
         transformerId: type === 'DT' ? targetId : null,
-        startTime,
-        endTime,
+        start: startTime,
+        end: endTime,
         reason: 'Simulated Maintenance'
       }
     });

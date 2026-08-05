@@ -6,7 +6,14 @@ export const getOptions = async (req: Request, res: Response): Promise<void> => 
     const { type, parentId } = req.query;
 
     if (type === 'feeders') {
-      const feeders = await prisma.feeder.findMany({ select: { id: true, name: true } });
+      const feeders = await prisma.feeder.findMany({
+        select: {
+          id: true,
+          transformers: true,
+          scheduledOutages: true,
+          _count: true
+        }
+      });
       res.json({ success: true, data: feeders });
     } else if (type === 'transformers') {
       const where = parentId ? { feederId: String(parentId) } : {};
