@@ -133,7 +133,8 @@ The application includes a built-in Simulator to demonstrate fault localization 
 The `AiSummaryService` utilizes the OpenAI API to translate complex incident data into clear, human-readable operational reports. If the API key is missing or quota is exhausted, a robust deterministic template generator is automatically used as a fallback, ensuring zero disruption to control room operations.
 
 ## Screenshots
-*(Add screenshots of the Control Room Dashboard here)*
+*<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/42ad59b3-ca3b-4257-8797-5a5ad6daecb6" />
+*
 
 ## Future Improvements
 - **Distributed Queuing**: Replace the in-memory queue with Redis/BullMQ to allow horizontal scaling of the Telemetry Worker across multiple node instances.
