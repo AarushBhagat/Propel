@@ -38,10 +38,6 @@
 
 ---
 
-# 📸 Application Preview
-
-<img width="1620" height="1079" alt="image" src="https://github.com/user-attachments/assets/6529838c-b4ad-4604-9226-e5fae4e2d507" />
-
 
 | Dashboard |
 |------------|
