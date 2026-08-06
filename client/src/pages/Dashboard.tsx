@@ -226,11 +226,11 @@ export default function Dashboard() {
                 <div className="flex justify-between items-start mb-2">
                   <span className="text-xs font-mono font-bold text-slate-300">#{incident.id.slice(0, 8)}</span>
                   <span className={`text-xs px-2 py-0.5 rounded font-bold ${
-                    incident.confidence >= 80 ? 'bg-green-950 text-green-400 border border-green-900' :
-                    incident.confidence >= 50 ? 'bg-orange-950 text-orange-400 border border-orange-900' :
+                    incident.confidence * 100 >= 80 ? 'bg-green-950 text-green-400 border border-green-900' :
+                    incident.confidence * 100 >= 50 ? 'bg-orange-950 text-orange-400 border border-orange-900' :
                     'bg-red-950 text-red-400 border border-red-900'
                   }`}>
-                    {incident.confidence}% CONF
+                    {Math.round(incident.confidence * 100)}% CONF
                   </span>
                 </div>
                 <div className="text-sm font-bold text-slate-100 mb-1">{incident.faultType || 'Span Fault'}</div>
@@ -311,7 +311,7 @@ export default function Dashboard() {
             <div className="mb-6">
               <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-2">Confidence Score</div>
               <div className="flex items-center space-x-3 mb-2">
-                <div className="text-3xl font-extrabold text-slate-100">{selectedIncident.confidence}%</div>
+                <div className="text-3xl font-extrabold text-slate-100">{Math.round(selectedIncident.confidence * 100)}%</div>
               </div>
               {selectedIncident.confidenceFactors && (
                 <div className="bg-slate-800 p-3 rounded border border-slate-700">
